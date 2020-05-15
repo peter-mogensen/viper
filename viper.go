@@ -20,6 +20,7 @@
 package viper
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/csv"
 	"encoding/json"
@@ -1429,6 +1430,14 @@ func (v *Viper) WriteConfigAs(filename string) error {
 	return v.writeConfig(filename, true)
 }
 
+// WriteConfigTo writes current configuration to a given io.Writer
+func WriteConfigTo(out io.Writer) error { return v.WriteConfigTo(out) }
+func (v *Viper) WriteConfigTo(out io.Writer) error {
+	configType := v.configType
+	err := v.marshalWriter(out, configType)
+	return err
+}
+
 // SafeWriteConfigAs writes current configuration to a given filename if it does not exist.
 func SafeWriteConfigAs(filename string) error { return v.SafeWriteConfigAs(filename) }
 func (v *Viper) SafeWriteConfigAs(filename string) error {
@@ -1563,7 +1572,8 @@ func (v *Viper) unmarshalReader(in io.Reader, c map[string]interface{}) error {
 }
 
 // Marshal a map into Writer.
-func (v *Viper) marshalWriter(f afero.File, configType string) error {
+func (v *Viper) marshalWriter(out io.Writer, configType string) error {
+	f := bufio.NewWriter(out)
 	c := v.AllSettings()
 	switch configType {
 	case "json":
@@ -1652,7 +1662,10 @@ func (v *Viper) marshalWriter(f afero.File, configType string) error {
 			cfg.Section(sectionName).Key(keyName).SetValue(v.Get(key).(string))
 		}
 		cfg.WriteTo(f)
+	default:
+		return ConfigMarshalError{fmt.Errorf("Unknown configType: '%s'", configType)}
 	}
+	f.Flush()
 	return nil
 }
 
