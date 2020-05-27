@@ -1887,8 +1887,10 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 	if prefix != "" {
 		prefix += v.keyDelim
 	}
+
 	for k, val := range m {
 		fullKey := prefix + k
+		shadow[strings.ToLower(fullKey)] = true
 		switch val.(type) {
 		case map[string]interface{}:
 			m2 = val.(map[string]interface{})
@@ -1896,7 +1898,6 @@ func (v *Viper) flattenAndMergeMap(shadow map[string]bool, m map[string]interfac
 			m2 = cast.ToStringMap(val)
 		default:
 			// immediate value
-			shadow[strings.ToLower(fullKey)] = true
 			continue
 		}
 		// recursively merge to shadow map
